@@ -132,27 +132,12 @@ ExceptionHandler(ExceptionType which)
             //}
             break;
    				}
+
+          default: ASSERT(FALSE);
+
+          IncrementPC();
     		}
 
 
     }
-}
-
-//Helper function to increment program counter, and registers holding previous
-//and next program counter values
-void IncrementPC()
-{
-	int pc, next, prev;
-
-	prev = machine->ReadRegister(PrevPCReg);
-    pc = machine->ReadRegister(PCReg);
-    next = machine->ReadRegister(NextPCReg);
-
-    prev = pc;
-    pc = next;
-    next = next + 4;	//Need to increment by 32 bit word, each integer is 1 byte
-
-	machine->WriteRegister(PrevPCReg, prev);
-	machine->WriteRegister(PCReg, pc);
-	machine->WriteRegister(NextPCReg, next);
 }

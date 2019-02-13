@@ -211,4 +211,7 @@ unsigned short ShortToHost(unsigned short shortword);
 unsigned int WordToMachine(unsigned int word);
 unsigned short ShortToMachine(unsigned short shortword);
 
+//Student-added program to increment prevPC, PC, and nextPC
+void IncrementPC();
+
 #endif // MACHINE_H
