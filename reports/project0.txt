@@ -1,0 +1,12 @@
+Alan Paniagua (PID: 2114765)
+Giuliana Avogadro Amadei (PID: 5724113) 
+Aaron Albiza (PID: 5540542)
+
+Project 0 Report
+
+Logging in to ocelot was familiar, and accesing nachos was simple as per instructions. WinSCP allowed us to place the compressed nachos download into the FIU directory, and the project description was informative in decompressing the file. Specifically, the flags being used forced some of us to research what their purpose in the command was. After running the make command, the threads demo ran according to the expected output.
+
+The halt test program, per code, is intended to be a syscall that shuts down the OS. The code is not clear about output, so looking into the included "syscall.h" file shows this should stop nachos, and print out performance stats. This is exactly what the output showed, displayed "Machine halted!". Running the program in single step mode showed snapshots of memory spaces and registers from ticks 11-22. Some further research is necessary to see why output began at tick 11.
+
+The file "thread.cc" offers a look at the thread class and its methods. The code mentions it contains routines to manage threads, which are familiar after previous experience in Programming 3 with forks and threads. The thread class provides methods to create a thread, finish and clean up a thread, yield control to a thread that is ready, and to place a thread to sleep until needed.
+

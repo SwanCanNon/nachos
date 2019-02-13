@@ -1,0 +1,24 @@
+Alan Paniagua (PID: 2114765)
+Giuliana Avogadro Amadei (PID: 5724113) 
+Aaron Albiza (PID: 5540542)
+
+Project 1 Report - Multithreading and Synchronization
+
+Exercise 1: Simple Threads Programming
+
+This project involved our first changes to the nachos code, with our work focused in the threads directory. At first, running nachos from within the threads directory causes a ThreadTest program to run. This program created a new thread with ran SimpleThread, with the original thread running SimpleThread as well and the two pass control between each other 5 times.
+ThreadTest was modified to fork between zero to four threads, and we see again these threads all run one by one, as they pass control to each other and all remain synchronized, until the -rs option is enabled and the threads lose all synchronization.
+Once SimpleThread was modified, instead see these forked threads sharing a variable, incrementing it, and displaying it. Running our new SimpleThread from the instructions with various arguments showed these threads out of synchronization, as they all read and wrote to the variable without some method of ensuring that each thread was accessing the data only after another thread was done with its changes to it. Thus, the final values were not incrementing correctly between threads.
+The next step was to use the present implementation of semaphores to fix the behavior of the program. The process requires sensitive thought of the "critical region" of the program, where our threads were accessing and changing data. Implementing a Semaphore::P, also known as a wait, allowed mutual exclusion of access to the data when reading and changing it, so the next thread receives the stricly incremented variable. A barrier was required to fix all the threads from receiving the same final value, which was implemented as an integer that the threads all checked before completion. Semaphore was also confirmed by followed semaphore_ping test instructions, and output of threads displaying "ping" and "pong" was correctly synchronized, even with interrupts.
+
+Exercise 2: Implementing Locks
+
+This seemed daunting at first, but after implementing semaphores it was easier to understand. The differences between locks and semaphores are subtle. A lock is either locked or unlocked, and only one thread is holding the lock at a time - only the thread holding the lock can release at one time, as opposed to any thread being able to signal that they were done with the semaphore. Understanding that, and using the skeleton of methods provided, synchronization through a lock was implemented and tested.
+
+Exercise 3: Implemention Conditions
+
+With the Lock code as a base, and the conditions required to be implemented in synch.h, it was a matter of moving some code around and conceptualizing the extra broadcast method in comparison to the signal. The tests for condition performed according to the expected output.
+
+Exercise 4
+
+Teammate worked on the assignment, but there was difficulty in merging code. The source of this problem is working with different code bases. Though there was issues between teammates, communication could have been improved earlier to clarify the current progress of the assignment.
