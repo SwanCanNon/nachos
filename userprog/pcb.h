@@ -1,28 +1,25 @@
 #ifndef PCB_H
 #define PCB_H
+#include "list.h"
 
-#include "bitmap.h"
-#include "synch.h"
-
-class Lock;
-class BitMap;
 class Thread;
 class List;
 
 class pcb {
         public:
-                pcb(Thread *input);
+                pcb(int processID);
                 ~pcb();
-                int getID();
-                void clearID();
-		void setParentToNull();
-		void removeChild();
+		void setChildrenParentToNull();
+		void removeChild(int exit);
+		void addChild(pcb *inputProcess);
 	
                 Thread *processThread;
                 int processID;
                 pcb *parent_process;
-                BitMap *IDMap;
-                Lock *lock;
 		List *children;
+		int exitValue;
 };
+
+void setParentToNull(int input);
+
 #endif //PCB_H

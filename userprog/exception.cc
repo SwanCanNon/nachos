@@ -50,7 +50,6 @@
 void 
 SyscallYield() {
         AddrSpace *currentAddrSpace = currentThread->space;
-        pcb *currentProcess = currentAddrSpace->PCB;
         printf("System Call: %d invoked Yield", currentAddrSpace->PCB->processID);
         currentThread->Yield();
 }
@@ -58,16 +57,19 @@ SyscallYield() {
 void 
 SyscallExit() {
  	AddrSpace *currentAddrSpace = currentThread->space;
- 	pcb *currentPCB = currentAddrSpace->PCB;
- 	int input = machine->ReadRegister(4);
-
-        printf("System Call: %d invoked Exit", currentAddrSpace->PCB->processID);
+ 	pcb *currentProcess = currentAddrSpace->PCB;
+ 	int exitValue = machine->ReadRegister(4);
 	
- 	currentPCB->setParentToNull();
-	currentPCB->removeChild();
-        currentAddrSpace->PCB->clearID();
+ 	currentProcess->setChildrenParentToNull();
+	currentProcess->removeChild(exitValue);
+        processManager->removePcb(currentProcess);
+		
 	currentAddrSpace->ReleaseMemory();
- 	currentThread->Finish();
+ 	
+	delete currentAddrSpace;
+	delete currentProcess;
+	
+	currentThread->Finish();
  }
 
 void 

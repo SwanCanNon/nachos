@@ -1,40 +1,37 @@
 #include "pcb.h"
 
-pcb::pcb(Thread *input){
-        processThread = input;
+pcb::pcb(int ID){
 	parent_process = 0;
-        processID = getID();
-        lock = new Lock("Process ID lock");
-        IDMap = new BitMap(32);
+        processID = ID;
 	children = new List();
 }
 
-pcb::~pcb(){
-        clearID();
-        delete lock;
-}
-
-int
-pcb::getID(){
-	lock->Acquire();
-	int IDNum = IDMap->Find();
-	lock->Release();
-return IDNum;
-}
-
-void 
-pcb::clearID(){
-	lock->Acquire();
-	IDMap->Clear(processID);
-	lock->Release();
+pcb::~pcb(){ 
+	delete children;
 }
 
 void
-pcb::setParentToNull(){
-	if (!children->IsEmpty()){
-			
+setParentToNull(int input){
+	pcb *input_process = (pcb *)input;
+	input_process->parent_process = NULL;
+}
+
+void
+pcb::setChildrenParentToNull(){
+	if(!children->IsEmpty()){
+	   children->Mapcar(setParentToNull);
 	}
 }
 
 void
-pcb::removeChild(){}
+pcb::removeChild(int exit){
+	if(parent_process != NULL){
+	   children->SortedRemove(&parent_process->processID);	
+	   parent_process->exitValue = exit; 	
+	}	
+}
+
+void
+pcb::addChild(pcb *inputProcess){
+	children->SortedInsert((void *)inputProcess, inputProcess->processID);
+}
