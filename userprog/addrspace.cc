@@ -248,3 +248,7 @@ void AddrSpace::ReleaseMemory(){
 		memoryManager->clearPage(pageTable[i].physicalPage);
 	}
 }
+
+bool AddrSpace::ReplaceContent(OpenFile *executable){
+
+}

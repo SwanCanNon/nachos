@@ -16,7 +16,7 @@ class ProcessManager{
  	pcb *createPcb();
   	void removePcb(pcb *inputProcess);
   	int getNumFreePcb();
-  	bool isSet(int processID);
+  	bool isFree(int processID);
   	pcb *getPcb(int processID);
 
   	int totalIDs;  
