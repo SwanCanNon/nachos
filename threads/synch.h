@@ -35,7 +35,7 @@
 // into a register, a context switch might have occurred,
 // and some other thread might have called P or V, so the true value might
 // now be different.
-
+class Thread;
 class Semaphore {
   public:
     Semaphore(char* debugName, int initialValue);	// set initial value

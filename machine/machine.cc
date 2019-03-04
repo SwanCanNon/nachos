@@ -214,8 +214,8 @@ void Machine::WriteRegister(int num, int value)
 
 void IncrementPC()
 {
-    WriteRegister(PrevPCReg, registers[PCReg]);
-    WriteRegister(PCReg, registers[PCReg] + 4);
-    WriteRegister(NextPCReg, registers[NextPCReg] + 4);
+    machine->WriteRegister(PrevPCReg, machine->registers[PCReg]);
+    machine->WriteRegister(PCReg, machine->registers[PCReg] + 4);
+    machine->WriteRegister(NextPCReg, machine->registers[NextPCReg] + 4);
 }
 

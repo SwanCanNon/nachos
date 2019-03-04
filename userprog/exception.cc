@@ -47,6 +47,58 @@
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
+void 
+SyscallYield() {
+        AddrSpace *currentAddrSpace = currentThread->space;
+        printf("System Call: %d invoked Yield", currentAddrSpace->PCB->processID);
+        currentThread->Yield();
+}
+
+void 
+SyscallExit() {
+ 	AddrSpace *currentAddrSpace = currentThread->space;
+ 	pcb *currentProcess = currentAddrSpace->PCB;
+ 	int exitValue = machine->ReadRegister(4);
+	
+ 	currentProcess->setChildrenParentToNull();
+	currentProcess->removeChild(exitValue);
+        processManager->removePcb(currentProcess);
+		
+	currentAddrSpace->ReleaseMemory();
+ 	
+	delete currentAddrSpace;
+	delete currentProcess;
+	
+	currentThread->Finish();
+ }
+
+void 
+SyscallFork() {
+ 	AddrSpace *currentAddrSpace = currentThread->space;
+ 	pcb *currentPCB = currentAddrSpace->PCB;
+        printf("System Call: %d invoked Fork", currentAddrSpace->PCB->processID);
+  }
+
+void 
+SyscallExec() {
+ 	AddrSpace *currentAddrSpace = currentThread->space;
+ 	pcb *currentPCB = currentAddrSpace->PCB;
+        printf("System Call: %d invoked Exec", currentAddrSpace->PCB->processID);
+ }
+
+void 
+SyscallJoin() {
+ 	AddrSpace *currentAddrSpace = currentThread->space;
+	pcb *currentPCB = currentAddrSpace->PCB;
+        printf("System Call: %d invoked Join", currentAddrSpace->PCB->processID);
+  }
+
+void 
+SyscallKill() {
+ 	AddrSpace *currentAddrSpace = currentThread->space;
+ 	pcb *currentPCB = currentAddrSpace->PCB;
+        printf("System Call: %d invoked Kill", currentAddrSpace->PCB->processID);
+  }
 
 void
 ExceptionHandler(ExceptionType which)
@@ -76,19 +128,22 @@ ExceptionHandler(ExceptionType which)
    				case SC_Exit:
    				{
    					DEBUG('a', "Requesting exit syscall.\n");
-   					break;
+   					SyscallExit();
+					break;
    				}
 
    				case SC_Exec:
    				{
    					DEBUG('a', "Requesting exec syscall.\n");
-   					break;
+   					SyscallExec();
+					break;
    				}
 
    				case SC_Join:
    				{
    					DEBUG('a', "Requesting join syscall.\n");
-   					break;
+   					SyscallJoin();
+					break;
    				}
 
    				case SC_Open:
@@ -118,25 +173,21 @@ ExceptionHandler(ExceptionType which)
    				case SC_Fork:
    				{
    					DEBUG('a', "Requesting fork syscall.\n");
-   					break;
+   					SyscallFork();
+					break;
    				}
 
    				case SC_Yield:
    				{
-       			//if ((which == SyscallException) && (type == SC_Yield)) {
-            DEBUG('a', "Yielding to another program\n");
-            currentThread->Yield();
-            //} else {
-            //printf("Unexpected user mode exception %d %d\n", which, type);
-            //ASSERT(FALSE);
-            //}
-            break;
+            				DEBUG('a', "Requesting a yield syscall.\n");
+            				SyscallYield();
+            				break;
    				}
 
           default: ASSERT(FALSE);
 
           IncrementPC();
-    		}
+    	}
 
 
     }
