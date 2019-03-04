@@ -145,3 +145,11 @@ Scheduler::Print()
     printf("Ready list contents:\n");
     readyList->Mapcar((VoidFunctionPtr) ThreadPrint);
 }
+
+#ifdef USER_PROGRAM
+void 
+Scheduler::RemoveThread(Thread *thread){
+	readyList->RemoveByElement((void *)thread);
+	threadToBeDestroyed = thread;
+}
+#endif

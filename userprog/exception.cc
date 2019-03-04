@@ -84,20 +84,111 @@ SyscallExec() {
  	AddrSpace *currentAddrSpace = currentThread->space;
  	pcb *currentPCB = currentAddrSpace->PCB;
         printf("System Call: %d invoked Exec", currentAddrSpace->PCB->processID);
+	
+	int path = machine->ReadRegister(4);
+	char *fileName = new char[256];
+	//ReadString(path, fileName, 256, currentAddrSpace);
+	OpenFile *executable = fileSystem->Open(fileName);
+
+	if (executable == NULL){
+		DEBUG('s', "Unable to execute because file is null.\n");
+		machine->WriteRegister(2, -1);
+		delete []fileName;
+		return;
+	}
+
+	if (!currentAddrSpace->ReplaceContent(executable)){
+                DEBUG('s', "Unable to replace current file on memory with executable.\n");
+                machine->WriteRegister(2, -1);
+                delete []fileName;
+                return;
+	}
+
+	currentAddrSpace->InitRegisters();
+	machine->WriteRegister(2, 1);
+	
+	delete executable;
+	delete []fileName;
  }
 
 void 
 SyscallJoin() {
  	AddrSpace *currentAddrSpace = currentThread->space;
-	pcb *currentPCB = currentAddrSpace->PCB;
+	pcb *currentPcb = currentAddrSpace->PCB;
         printf("System Call: %d invoked Join", currentAddrSpace->PCB->processID);
-  }
+	int joinID = machine->ReadRegister(4);  
+	
+	if (joinID >= processManager->totalIDs || joinID < 0){
+		DEBUG('s', "Join process failed, invalid ID.\n");
+                machine->WriteRegister(2, -1);
+                return;
+	}
+
+	pcb *joinPcb = processManager->getPcb(joinID);
+
+	if (joinPcb == NULL){
+		DEBUG('s', "Join process was not found to be in process manager.\n");
+        	machine->WriteRegister(2, -1);
+		return;
+	}
+
+	if (joinPcb->parent_process->processID == currentPcb->processID){
+		while(!processManager->isFree(joinID)) {
+  			DEBUG('s', "Join process is not finished.\n");
+			SyscallYield();
+		}
+		machine->WriteRegister(2, joinPcb->exitValue);
+	}
+	
+	DEBUG('s', "Join process not child of current process.\n");
+	machine->WriteRegister(2, -1);
+}
 
 void 
 SyscallKill() {
  	AddrSpace *currentAddrSpace = currentThread->space;
- 	pcb *currentPCB = currentAddrSpace->PCB;
+ 	pcb *currentProcess = currentAddrSpace->PCB;
         printf("System Call: %d invoked Kill", currentAddrSpace->PCB->processID);
+
+	int processKillID = machine->ReadRegister(4);
+
+	if (processKillID >= processManager->totalIDs || processKillID){
+                DEBUG('s', "Unable to kill process, process ID is invalid.\n");
+                machine->WriteRegister(2, -1);
+                return;
+        }
+
+	pcb *processToKill = processManager->getPcb(processKillID);
+
+	if(processToKill == NULL){
+		DEBUG('s', "Unable to kill process because it doesn't exist\n");
+		machine->WriteRegister(2, -1);
+		return;
+	}
+
+	else {
+		if(processKillID == currentProcess->processID){
+			DEBUG('s', "Process to be killed is the current process. Call exit syscall\n");
+                	SyscallExit();
+			machine->WriteRegister(2, 0);
+			return;
+		}
+
+		Thread *threadToKill = processToKill->processThread;
+                AddrSpace *addrSpaceToKill = threadToKill->space;
+
+		processToKill->setChildrenParentToNull();
+		processToKill->removeChild(-1);
+		processManager->removePcb(processToKill);
+		addrSpaceToKill->ReleaseMemory();
+		scheduler->RemoveThread(threadToKill);
+
+		delete processToKill;
+		delete addrSpaceToKill;
+		delete threadToKill;
+
+		machine->WriteRegister(2, 0);
+	}
   }
 
 void

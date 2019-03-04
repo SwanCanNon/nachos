@@ -58,3 +58,12 @@ pcb
 return NULL;
 }
 
+bool 
+ProcessManager::isFree(int processID){
+	lock->Acquire();
+	bool isFree = processIDs->Test(processID);
+	lock->Release();
+	return !isFree;
+}
+
+

@@ -38,6 +38,8 @@ class AddrSpace {
     void ReleaseMemory();
 	
     void Translation(int virtualAddress, int * physicalAdress, int size);
+
+    bool ReplaceContent(OpenFile *executable); // New function for exec syscall
 	
     pcb *PCB;
 	
