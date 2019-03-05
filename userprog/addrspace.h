@@ -25,6 +25,8 @@ class AddrSpace {
     AddrSpace(OpenFile *executable);	// Create an address space,
 					// initializing it with the program
 					// stored in the file "executable"
+    AddrSpace(); 			// Create empty objet to be built to be initialized on fork    
+
     ~AddrSpace();			// De-allocate an address space
 
     void InitRegisters();		// Initialize user-level CPU registers,
@@ -39,8 +41,14 @@ class AddrSpace {
 	
     void Translation(int virtualAddress, int * physicalAdress, int size);
 
-    bool ReplaceContent(OpenFile *executable); // New function for exec syscall
+    bool ReplaceContent(OpenFile *executable); // New function for exec syscall, same as construtor but diff executable
 	
+    void SaveRegisters(); // New function for fork syscall
+ 
+    void RestoreRegisters();
+    
+    AddrSpace* Copy(); // Copy address space for fork syscall
+    
     pcb *PCB;
 	
   private:
@@ -48,6 +56,7 @@ class AddrSpace {
 					// for now!
     unsigned int numPages;		// Number of pages in the virtual 
 					// address space
+    int tempRegs[NumTotalRegs];
 };
 
 #endif // ADDRSPACE_H

@@ -72,6 +72,11 @@ SwapHeader (NoffHeader *noffH)
 	noffH->uninitData.inFileAddr = WordToHost(noffH->uninitData.inFileAddr);
 }
 
+// empty constructor for fork 
+AddrSpace::AddrSpace(){
+
+}
+
 //----------------------------------------------------------------------
 // AddrSpace::AddrSpace
 // 	Create an address space to run a user program.
@@ -215,6 +220,8 @@ void AddrSpace::LoadCode(int virtualAddr, int size, int fileAddr, OpenFile* file
         int currentTemp = 0;
         file->ReadAt(temp, size, fileAddr);
 
+	printf("Loaded Program: [%d] code | [y] data | [z] bss. \n", codeSize);
+	
 	if (virtualAddr % PageSize != 0) { //if we don't cover full page
 		int minSize = min(size, PageSize - virtualAddr % PageSize);
 		Translation(currentVirtualAddr, &physicalAddr, minSize);
@@ -244,11 +251,98 @@ void AddrSpace::LoadCode(int virtualAddr, int size, int fileAddr, OpenFile* file
 }
 
 void AddrSpace::ReleaseMemory(){
-	for (int i = 0; i < numPages; ++i) {
+	for (int i = 0; i < numPages; i++) {
 		memoryManager->clearPage(pageTable[i].physicalPage);
 	}
 }
 
 bool AddrSpace::ReplaceContent(OpenFile *executable){
+ NoffHeader noffH;
+    unsigned int i, size;
+
+    executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
+    if ((noffH.noffMagic != NOFFMAGIC) &&
+                (WordToHost(noffH.noffMagic) == NOFFMAGIC))
+        SwapHeader(&noffH);
+    ASSERT(noffH.noffMagic == NOFFMAGIC);
+
+// how big is address space?
+    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size
+                        + UserStackSize;        // we need to increase the size
+                                                // to leave room for the stack
+    numPages = divRoundUp(size, PageSize);
+    size = numPages * PageSize;
+
+    ASSERT(numPages <= memoryManager->getNumFreePages()); //check there is space        
+
+    DEBUG('a', "Initializing address space, num pages %d, size %d\n",
+                                        numPages, size);
+// first, set up the translation 
+    pageTable = new TranslationEntry[numPages];
+    for (i = 0; i < numPages; i++) {
+        pageTable[i].virtualPage = i;   // for now, virtual page # = phys page #
+        pageTable[i].physicalPage = memoryManager->getPage();
+        pageTable[i].valid = TRUE;
+        pageTable[i].use = FALSE;
+        pageTable[i].dirty = FALSE;
+        pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
+                                        // a separate page, we could set its 
+                                        // pages to be read-only
+        bzero(machine->mainMemory + pageTable[i].physicalPage*PageSize, PageSize);
+    }
+
+// then, copy in the code and data segments into memory
+    if (noffH.code.size > 0) {
+        DEBUG('a', "Initializing code segment, at 0x%x, size %d\n",
+                        noffH.code.virtualAddr, noffH.code.size);
+
+        LoadCode(noffH.code.virtualAddr, noffH.code.size, noffH.code.inFileAddr, executable);
+    }
+
+    if (noffH.initData.size > 0) {
+        DEBUG('a', "Initializing data segment, at 0x%x, size %d\n",
+                        noffH.initData.virtualAddr, noffH.initData.size);
+
+        LoadCode(noffH.initData.virtualAddr, noffH.initData.size, noffH.initData.inFileAddr, executable);
+    }
+
+}
+
+AddrSpace* AddrSpace::Copy(){
+	AddrSpace *copy = new AddrSpace();
+	unsigned int i;
+	printf("Process [%d] Fork: start at address [d] with [%d] pages memory.\n", this->PCB->processID, numPages);
+
+	if (memoryManager->getNumFreePages() < numPages){
+		DEBUG('s', "Not enough pages for the forked process");
+	return NULL;
+	}
+	
+	copy->pageTable = new TranslationEntry[numPages];
+	copy->numPages = numPages;
+
+    	for (i = 0; i < numPages; i++) {
+		copy->pageTable[i].virtualPage = pageTable[i].virtualPage;	
+		copy->pageTable[i].physicalPage = pageTable[i].physicalPage;
+		copy->pageTable[i].valid = pageTable[i].valid;
+		copy->pageTable[i].use = pageTable[i].use;
+		copy->pageTable[i].dirty = pageTable[i].dirty;
+		copy->pageTable[i].readOnly = pageTable[i].readOnly;
+		bcopy(machine->mainMemory + pageTable[i].physicalPage*PageSize, machine->mainMemory + copy->pageTable[i].physicalPage*PageSize, PageSize);
+	}
+
+return copy;
+}
+
+void AddrSpace::RestoreRegisters(){
+        for (int i = 0; i < NumTotalRegs; i++){
+                machine->WriteRegister(i, tempRegs[i]);
+        }
+}
+
+void AddrSpace::SaveRegisters(){
+	for (int i = 0; i < NumTotalRegs; i++){
+		tempRegs[i] = machine->ReadRegister(i);
+	}
 
 }

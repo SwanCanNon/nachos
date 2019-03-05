@@ -63,6 +63,8 @@ SyscallExit() {
  	currentProcess->setChildrenParentToNull();
 	currentProcess->removeChild(exitValue);
         processManager->removePcb(currentProcess);
+	
+	printf("Process [%d] exits with status [%d].\n", currentProcess->processID, exitValue);
 		
 	currentAddrSpace->ReleaseMemory();
  	
@@ -73,21 +75,73 @@ SyscallExit() {
  }
 
 void 
+ThreadFunction(int which){
+	currentThread->space->RestoreRegisters();
+	currentThread->space->RestoreState(); // restore mem
+	machine->Run();
+}
+
+void 
 SyscallFork() {
  	AddrSpace *currentAddrSpace = currentThread->space;
- 	pcb *currentPCB = currentAddrSpace->PCB;
         printf("System Call: %d invoked Fork", currentAddrSpace->PCB->processID);
-  }
+	
+	currentAddrSpace->SaveRegisters();
+	
+	AddrSpace *forkedAddrSpace = currentAddrSpace->Copy();
+	Thread *forkedThread = new Thread("Forked thread");
+	pcb *forkedPcb = processManager->createPcb();
+
+	if (forkedAddrSpace == NULL || forkedThread == NULL || forkedPcb == NULL){
+		DEBUG('s', "Unable to fork because space, thread or pcb is null.\n");
+                machine->WriteRegister(2, -1);
+                delete forkedAddrSpace;
+		delete forkedPcb;
+		delete forkedThread;
+                return;
+	}
+	
+	forkedAddrSpace->PCB = forkedPcb;
+	forkedThread->space = forkedAddrSpace;
+	forkedPcb->processThread = forkedThread;
+	
+	//copy registers
+	int processAddr = machine->ReadRegister(4);
+	machine->WriteRegister(PCReg, processAddr);
+	
+	forkedThread->Fork(ThreadFunction, 1);
+	
+	currentAddrSpace->RestoreRegisters(); 
+ 
+	machine->WriteRegister(2, forkedPcb->processID);
+	machine->WriteRegister(NextPCReg, processAddr + 4);
+	machine->WriteRegister(PrevPCReg, processAddr + 4);
+ }
 
 void 
 SyscallExec() {
  	AddrSpace *currentAddrSpace = currentThread->space;
- 	pcb *currentPCB = currentAddrSpace->PCB;
         printf("System Call: %d invoked Exec", currentAddrSpace->PCB->processID);
 	
+	char symbol;
+	char eos = '\0';
+	int counter = 0;
+	int physicalAddr = 0;
 	int path = machine->ReadRegister(4);
 	char *fileName = new char[256];
-	//ReadString(path, fileName, 256, currentAddrSpace);
+	
+	printf("Exec Program: [%d] loading [%c].\n", currentAddrSpace->PCB->processID, fileName);
+	
+	while (symbol != eos && counter < 256){
+		currentAddrSpace->Translation(path, &physicalAddr, 1);
+		if (physicalAddr != 0){
+			bcopy(machine->mainMemory + physicalAddr, &symbol, 1);
+			fileName[counter] = symbol;
+			counter++;
+			path = path + 4;
+		}
+	}
+
 	OpenFile *executable = fileSystem->Open(fileName);
 
 	if (executable == NULL){
@@ -114,7 +168,7 @@ SyscallExec() {
 void 
 SyscallJoin() {
  	AddrSpace *currentAddrSpace = currentThread->space;
-	pcb *currentPcb = currentAddrSpace->PCB;
+	pcb *currentProcess = currentAddrSpace->PCB;
         printf("System Call: %d invoked Join", currentAddrSpace->PCB->processID);
 	int joinID = machine->ReadRegister(4);  
 	
@@ -132,7 +186,7 @@ SyscallJoin() {
 		return;
 	}
 
-	if (joinPcb->parent_process->processID == currentPcb->processID){
+	if (joinPcb->parent_process->processID == currentProcess->processID){
 		while(!processManager->isFree(joinID)) {
   			DEBUG('s', "Join process is not finished.\n");
 			SyscallYield();
@@ -162,6 +216,8 @@ SyscallKill() {
 
 	if(processToKill == NULL){
 		DEBUG('s', "Unable to kill process because it doesn't exist\n");
+		printf("Process [%d] is unable to kill process [%d]: doesn't exist.\n", currentProcess->processID, processKillID);
+
 		machine->WriteRegister(2, -1);
 		return;
 	}
@@ -182,6 +238,8 @@ SyscallKill() {
 		processManager->removePcb(processToKill);
 		addrSpaceToKill->ReleaseMemory();
 		scheduler->RemoveThread(threadToKill);
+
+		 printf("Process [%d] killed process [%d].\n", currentProcess->processID, processKillID);
 
 		delete processToKill;
 		delete addrSpaceToKill;
