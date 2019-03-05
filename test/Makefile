@@ -42,6 +42,12 @@ start.o: start.s ../userprog/syscall.h
 	$(AS) $(ASFLAGS) -o start.o strt.s
 	rm strt.s
 
+yield.o: yield.c
+	$(CC) $(CFLAGS) -c yield.c
+yield: yield.o start.o
+	$(LD) $(LDFLAGS) start.o yield.o -o yield.coff
+	../bin/coff2noff yield.coff yield
+
 halt.o: halt.c
 	$(CC) $(CFLAGS) -c halt.c
 halt: halt.o start.o

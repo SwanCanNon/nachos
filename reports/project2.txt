@@ -1,0 +1,7 @@
+Alan Paniagua (PID: 2114765)
+Giuliana Avogadro Amadei (PID: 5724113)
+
+Project 2 Report - Multiprogramming System Calls
+
+how you design the code and how your code works, and how to run tewhat does not
+workand explain your efforts in order to get partial credits

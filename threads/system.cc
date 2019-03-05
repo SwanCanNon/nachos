@@ -151,6 +151,8 @@ Initialize(int argc, char **argv)
     
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
+    memoryManager = new MemoryManager();
+    processManager = new ProcessManager();
 #endif
 
 #ifdef FILESYS

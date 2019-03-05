@@ -94,6 +94,7 @@ AddrSpace::AddrSpace(){
 
 AddrSpace::AddrSpace(OpenFile *executable)
 {
+	
     NoffHeader noffH;
     unsigned int i, size;
 
@@ -110,11 +111,13 @@ AddrSpace::AddrSpace(OpenFile *executable)
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
-    ASSERT(numPages <= memoryManager->getNumFreePages()); //check there is space	
+    ASSERT(numPages <= memoryManager->getNumFreePages());						// to run anything too big --
+						// at least until we have
+						// virtual memory
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
-// first, set up the translation 
+    
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
@@ -127,8 +130,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
 					// pages to be read-only
 	bzero(machine->mainMemory + pageTable[i].physicalPage*PageSize, PageSize);
     }
-   
-// then, copy in the code and data segments into memory
+
+    // then, copy in the code and data segments into memory
     if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 			noffH.code.virtualAddr, noffH.code.size);       
@@ -142,7 +145,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 	
         LoadCode(noffH.initData.virtualAddr, noffH.initData.size, noffH.initData.inFileAddr, executable);
     }
-
+			
 }
 
 //----------------------------------------------------------------------

@@ -9,7 +9,7 @@ class BitMap;
 
 class MemoryManager {
         public:
-                MemoryManager(int numPages);
+                MemoryManager();
                 ~MemoryManager();
                 int getPage();
                 void clearPage(int pageId);

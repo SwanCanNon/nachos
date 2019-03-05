@@ -1,8 +1,8 @@
 #include "copyright.h"
 #include "memorymanager.h"
 
-MemoryManager::MemoryManager(int numTotalPages){
-	virtMem = new BitMap(numTotalPages);
+MemoryManager::MemoryManager(){
+	virtMem = new BitMap(NumPhysPages);
 	lock = new Lock("virtual page lock");
 }
 
